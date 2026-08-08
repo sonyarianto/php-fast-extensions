@@ -15,6 +15,24 @@ A collection of high-performance PHP extensions written in Rust with
 | `rust_csv_streamer` — streaming CSV reader | `csv_streamer/` | ✅ Working |
 | `rust_excel_streamer` — streaming XLSX reader | `excel_streamer/` | ✅ Working |
 
+## IDE autocomplete
+
+Both extensions ship hand-written PHP stubs (docblocks + signatures, kept in
+sync with the Cargo sources) so IDEs can autocomplete and type-check classes
+that only exist at runtime:
+
+- `csv_streamer/stubs/CsvStreamer.php`
+- `excel_streamer/stubs/XlsxStreamer.php`
+
+Point your IDE's include path at them, or add them to your project's
+`composer.json`:
+
+```json
+"autoload": {
+    "files": ["csv_streamer/stubs/CsvStreamer.php", "excel_streamer/stubs/XlsxStreamer.php"]
+}
+```
+
 ---
 
 ## rust_csv_streamer
@@ -277,10 +295,6 @@ php tests/generate_xlsx.php          # generates small.xlsx + large.xlsx
 php -d extension=target/release/libexcel_streamer.so tests/test.php
 php -d extension=target/release/libexcel_streamer.so tests/bench.php
 ```
-
-## Roadmap
-
-- `cargo-php` stub generation for IDE autocomplete
 
 ## License
 

@@ -31,6 +31,11 @@ test: build
 			[ -f "$$gen" ] && php "$$gen"; \
 		done; \
 		php -d extension=$$ext/$(BUILD_DIR)/lib$$ext.so $$ext/tests/test.php || exit 1; \
+		for stub in $$ext/stubs/*.php; do \
+			[ -f "$$stub" ] || continue; \
+			cls=$$(grep -oP '^\s*(abstract\s+)?final\s+class\s+\K\w+|^\s*class\s+\K\w+' "$$stub" | head -1); \
+			php -d extension=$$ext/$(BUILD_DIR)/lib$$ext.so $$ext/tests/check_stubs.php "$$stub" "$$cls" || exit 1; \
+		done; \
 	done
 	@echo "All tests passed."
 

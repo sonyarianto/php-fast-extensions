@@ -35,3 +35,17 @@ php -d extension=excel_streamer/target/release/libexcel_streamer.so script.php
 make build   # builds all extensions
 make test    # builds + runs every extension's test suite
 ```
+
+## IDE autocomplete
+
+`XlsxStreamer` exists only at runtime, so IDEs need the stub file:
+
+- `excel_streamer/stubs/XlsxStreamer.php` (signatures + docblocks)
+
+Point your IDE's include path at it, or autoload it via `composer.json`:
+
+```json
+"autoload": {
+    "files": ["excel_streamer/stubs/XlsxStreamer.php"]
+}
+```

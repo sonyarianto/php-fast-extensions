@@ -40,3 +40,17 @@ php -d extension=csv_streamer/target/release/libcsv_streamer.so script.php
 php -m | grep csv_streamer
 php -r 'var_dump(new ReflectionClass("CsvStreamer"));'
 ```
+
+## IDE autocomplete
+
+`CsvStreamer` exists only at runtime, so IDEs need the stub file:
+
+- `csv_streamer/stubs/CsvStreamer.php` (signatures + docblocks)
+
+Point your IDE's include path at it, or autoload it via `composer.json`:
+
+```json
+"autoload": {
+    "files": ["csv_streamer/stubs/CsvStreamer.php"]
+}
+```
