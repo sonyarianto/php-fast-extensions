@@ -9,7 +9,8 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Extensions', link: '/csv-streamer/' },
+      { text: 'CsvStreamer', link: '/csv-streamer/' },
+      { text: 'XlsxStreamer', link: '/excel-streamer/' },
       { text: 'GitHub', link: 'https://github.com/sonyarianto/php-fast-extensions' },
     ],
 
@@ -23,6 +24,18 @@ export default defineConfig({
             { text: 'Usage', link: '/csv-streamer/usage' },
             { text: 'API Reference', link: '/csv-streamer/api' },
             { text: 'Performance', link: '/csv-streamer/performance' },
+          ],
+        },
+      ],
+      '/excel-streamer/': [
+        {
+          text: 'XlsxStreamer',
+          items: [
+            { text: 'Overview', link: '/excel-streamer/' },
+            { text: 'Installation', link: '/excel-streamer/installation' },
+            { text: 'Usage', link: '/excel-streamer/usage' },
+            { text: 'API Reference', link: '/excel-streamer/api' },
+            { text: 'Performance', link: '/excel-streamer/performance' },
           ],
         },
       ],

@@ -9,7 +9,7 @@
 #   make bench   # run each extension's PHP benchmark
 #   make clean
 
-EXTENSIONS := csv_streamer
+EXTENSIONS := csv_streamer excel_streamer
 
 BUILD_DIR ?= target/release
 
@@ -27,7 +27,9 @@ build-%:
 test: build
 	@for ext in $(EXTENSIONS); do \
 		echo "==> Testing $$ext"; \
-		if [ -f $$ext/tests/generate_csv.php ]; then php $$ext/tests/generate_csv.php; fi; \
+		for gen in $$ext/tests/generate_*.php; do \
+			[ -f "$$gen" ] && php "$$gen"; \
+		done; \
 		php -d extension=$$ext/$(BUILD_DIR)/lib$$ext.so $$ext/tests/test.php || exit 1; \
 	done
 	@echo "All tests passed."
@@ -35,7 +37,9 @@ test: build
 bench: build
 	@for ext in $(EXTENSIONS); do \
 		echo "==> Benchmarking $$ext"; \
-		if [ -f $$ext/tests/generate_csv.php ]; then php $$ext/tests/generate_csv.php; fi; \
+		for gen in $$ext/tests/generate_*.php; do \
+			[ -f "$$gen" ] && php "$$gen"; \
+		done; \
 		php -d extension=$$ext/$(BUILD_DIR)/lib$$ext.so $$ext/tests/bench.php || exit 1; \
 	done
 

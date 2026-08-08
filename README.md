@@ -14,6 +14,7 @@ A collection of high-performance PHP extensions written in Rust with
 | Extension | Directory | Status |
 |---|---|---|
 | `rust_csv_streamer` — streaming CSV reader | `csv_streamer/` | ✅ Working |
+| `rust_excel_streamer` — streaming XLSX reader | `excel_streamer/` | ✅ Working |
 
 ---
 
@@ -168,10 +169,90 @@ make bench   # build + run each extension's benchmark
 make clean
 ```
 
+## rust_excel_streamer
+
+A high-performance, streaming XLSX reader for PHP. Reads `.xlsx` / `.xlsm`
+workbooks row by row straight from the sheet XML, keeping memory usage
+constant regardless of file size. Implements PHP's `Iterator` interface.
+
+### Features
+
+- **Streaming / lazy**: rows are parsed in internal batches of 1,000 from the
+  sheet XML inside the zip container — peak memory stays ~2 MB on a 100k-row
+  sheet
+- **`foreach` support**: implements `Iterator` (`current`, `key`, `next`,
+  `rewind`, `valid`)
+- **`nextRow()` / `nextRows($n)` hot paths**: one call per row or one call
+  per batch
+- **Header-aware**: opt-in associative rows keyed by header (pre-built PHP
+  string keys)
+- **Sheet selection**: pick any visible sheet by name, or default to the
+  first one; `XlsxStreamer::sheets($path)` lists them
+- **Native cell types**: numbers become `int`/`float`, booleans become
+  `bool`, dates/times become ISO-8601 strings, blank cells become `null`
+- **Constant memory**: shared strings and styles are loaded once; only one
+  batch of rows is materialized at a time
+- **Errors as exceptions**: missing files, unknown sheets and malformed
+  workbooks throw `\Exception`
+
+### Usage
+
+```php
+<?php
+// First visible sheet, header-aware
+$streamer = new XlsxStreamer('report.xlsx', null, true);
+
+foreach ($streamer as $i => $row) {
+    echo $row['name'], ' joined ', $row['joined'], "\n";
+}
+
+// Specific sheet, no headers
+$raw = new XlsxStreamer('report.xlsx', 'Raw Data');
+
+// List sheets first
+$sheets = XlsxStreamer::sheets('report.xlsx'); // ['Summary', 'Raw Data']
+```
+
+### API
+
+`new XlsxStreamer(string $path, ?string $sheet = null, ?bool $has_headers = false)`
+
+Implements `\Iterator` (`current`, `key`, `next`, `rewind`, `valid`), plus:
+
+| Method | Returns | Description |
+|---|---|---|
+| `nextRow()` | `array\|null` | Advance and return the row in one call |
+| `nextRows(int $count)` | `array\|null` | Read up to `$count` rows in one batch |
+| `headers()` | `array\|null` | Header row as a list, or null when disabled |
+| `sheetName()` | `string` | Name of the sheet being read |
+| `XlsxStreamer::sheets($path)` | `string[]` | Visible sheet names (static) |
+
+### Performance
+
+On a 100,000-row / 8-column generated sheet (3.8 MB xlsx):
+
+| Method | Time | Peak memory | Rows/sec |
+|---|---|---|---|
+| `foreach` (list rows) | 812 ms | 2.0 MB | 123k |
+| `foreach` (assoc rows) | 850 ms | 2.0 MB | 118k |
+| `nextRow()` (assoc rows) | 762 ms | 2.0 MB | 131k |
+| `nextRows(1000)` (assoc rows) | 729 ms | 2.0 MB | **137k** |
+
+There is no PHP stdlib baseline — PHP has no built-in XLSX reader. The
+classic alternative (loading the whole sheet into memory, e.g. via
+PhpSpreadsheet) peaks at the full file size; this reader stays at ~2 MB.
+
+### Tests & benchmarks
+
+```bash
+cd excel_streamer
+php tests/generate_xlsx.php          # generates small.xlsx + large.xlsx
+php -d extension=target/release/libexcel_streamer.so tests/test.php
+php -d extension=target/release/libexcel_streamer.so tests/bench.php
+```
+
 ## Roadmap
 
-- Excel streaming (`.xlsx`) — see the `xlsx_batch_reader` approach for
-  constant-memory reads
 - Batch DB ingest mode (`ingestToDb()`) with bulk inserts
 - `cargo-php` stub generation for IDE autocomplete
 

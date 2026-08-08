@@ -33,8 +33,9 @@ features:
 | Extension | Description |
 |---|---|
 | [CsvStreamer](/csv-streamer/) | Streaming CSV reader with associative rows, custom delimiters and two UTF-8 modes |
+| [XlsxStreamer](/excel-streamer/) | Streaming XLSX reader with constant memory, sheet selection and native cell types |
 
-More coming soon — streaming Excel (`.xlsx`) readers and batch database ingest.
+More coming soon — batch database ingest.
 
 ## Quick start
 

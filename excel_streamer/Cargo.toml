@@ -1,0 +1,20 @@
+[package]
+name = "rust_excel_streamer"
+version = "0.1.0"
+edition = "2021"
+description = "High-performance streaming XLSX reader PHP extension"
+
+[lib]
+name = "excel_streamer"
+crate-type = ["cdylib"]
+
+[dependencies]
+ext-php-rs = "0.15"
+xlsx_batch_reader = "0.4"
+chrono = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
