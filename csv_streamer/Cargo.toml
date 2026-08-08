@@ -5,6 +5,7 @@ edition = "2021"
 description = "High-performance streaming CSV reader PHP extension"
 
 [lib]
+name = "csv_streamer"
 crate-type = ["cdylib"]
 
 [dependencies]

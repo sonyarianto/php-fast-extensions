@@ -17,7 +17,7 @@ cargo build --release
 The extension is produced at:
 
 ```
-csv_streamer/target/release/librust_csv_streamer.so
+csv_streamer/target/release/libcsv_streamer.so
 ```
 
 ## Load
@@ -25,13 +25,13 @@ csv_streamer/target/release/librust_csv_streamer.so
 Add to `php.ini`:
 
 ```ini
-extension=/absolute/path/to/csv_streamer/target/release/librust_csv_streamer.so
+extension=/absolute/path/to/csv_streamer/target/release/libcsv_streamer.so
 ```
 
 Or load it per invocation:
 
 ```bash
-php -d extension=csv_streamer/target/release/librust_csv_streamer.so script.php
+php -d extension=csv_streamer/target/release/libcsv_streamer.so script.php
 ```
 
 ## Verify

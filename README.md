@@ -48,7 +48,7 @@ works directly with `foreach`.
 ```bash
 cd csv_streamer
 cargo build --release
-# -> target/release/librust_csv_streamer.so
+# -> target/release/libcsv_streamer.so
 ```
 
 ### Install
@@ -56,13 +56,13 @@ cargo build --release
 Add the extension to `php.ini`:
 
 ```ini
-extension=/absolute/path/to/csv_streamer/target/release/librust_csv_streamer.so
+extension=/absolute/path/to/csv_streamer/target/release/libcsv_streamer.so
 ```
 
 or load it per-invocation:
 
 ```bash
-php -d extension=csv_streamer/target/release/librust_csv_streamer.so script.php
+php -d extension=csv_streamer/target/release/libcsv_streamer.so script.php
 ```
 
 ### Usage
@@ -141,8 +141,8 @@ and a 1 MB read buffer.
 ```bash
 cd csv_streamer
 php tests/generate_csv.php          # generates small fixture files
-php -d extension=target/release/librust_csv_streamer.so tests/test.php
-php -d extension=target/release/librust_csv_streamer.so tests/bench.php
+php -d extension=target/release/libcsv_streamer.so tests/test.php
+php -d extension=target/release/libcsv_streamer.so tests/bench.php
 ```
 
 `tests/bench_customers.php` benchmarks the real 2M-row dataset

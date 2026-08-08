@@ -45,12 +45,12 @@ row-array API.
 cd csv_streamer
 cargo build --release
 php tests/generate_csv.php
-php -d extension=target/release/librust_csv_streamer.so tests/bench.php
+php -d extension=target/release/libcsv_streamer.so tests/bench.php
 ```
 
 For the real-dataset benchmark, place `customers-2000000.csv` in
 `tests/data/` (not part of the repo) and run:
 
 ```bash
-php -d extension=target/release/librust_csv_streamer.so tests/bench_customers.php
+php -d extension=target/release/libcsv_streamer.so tests/bench_customers.php
 ```
