@@ -16,29 +16,6 @@ A collection of high-performance PHP extensions written in Rust with
 | `rust_excel_streamer` — streaming XLSX reader | `excel_streamer/` | ✅ Working |
 | `rust_json_streamer` — streaming JSON array reader | `json_streamer/` | ✅ Working |
 
-## IDE autocomplete
-
-Both extensions ship hand-written PHP stubs (docblocks + signatures, kept in
-sync with the Cargo sources) so IDEs can autocomplete and type-check classes
-that only exist at runtime:
-
-- `csv_streamer/stubs/CsvStreamer.php`
-- `excel_streamer/stubs/XlsxStreamer.php`
-- `json_streamer/stubs/JsonStreamer.php`
-
-Point your IDE's include path at them, or add them to your project's
-`composer.json`:
-
-```json
-"autoload": {
-    "files": [
-        "csv_streamer/stubs/CsvStreamer.php",
-        "excel_streamer/stubs/XlsxStreamer.php",
-        "json_streamer/stubs/JsonStreamer.php"
-    ]
-}
-```
-
 ---
 
 ## rust_csv_streamer
@@ -387,6 +364,29 @@ cd json_streamer
 php tests/generate_json.php         # generates small.json + large.json (226 MB)
 php -d extension=target/release/libjson_streamer.so tests/test.php
 php -d extension=target/release/libjson_streamer.so tests/bench.php
+```
+
+## IDE autocomplete
+
+All extensions ship hand-written PHP stubs (docblocks + signatures, kept in
+sync with the Cargo sources) so IDEs can autocomplete and type-check classes
+that only exist at runtime:
+
+- `csv_streamer/stubs/CsvStreamer.php`
+- `excel_streamer/stubs/XlsxStreamer.php`
+- `json_streamer/stubs/JsonStreamer.php`
+
+Point your IDE's include path at them, or add them to your project's
+`composer.json`:
+
+```json
+"autoload": {
+    "files": [
+        "csv_streamer/stubs/CsvStreamer.php",
+        "excel_streamer/stubs/XlsxStreamer.php",
+        "json_streamer/stubs/JsonStreamer.php"
+    ]
+}
 ```
 
 ## License
