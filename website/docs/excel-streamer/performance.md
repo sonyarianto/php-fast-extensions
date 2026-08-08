@@ -42,18 +42,19 @@ work is the XML parse itself, which is inherently per-cell.
 
 ## Real-world file
 
-`tests/data/100mb.xlsx` (not committed to git) is a ~100 MB zip containing
-~560 MB of uncompressed XML; the `Tablo3` sheet alone is a 354 MB
-`sheet4.xml`:
+`tests/data/retail-sales-data.xlsx` (not committed to git) is a 231 MB
+workbook whose single sheet holds **500,000 rows × 12 columns** (~242 MB of
+uncompressed sheet XML):
 
-| Sheet | XML size | Rows | Time | Peak memory | Rows/sec |
-|---|---|---|---:|---:|---:|
-| First visible | 9.3 MB | 27,000 | ~0.2 s | 2.0 MB | ~135k |
-| `Tablo3` | 354 MB | 99,928 | ~0.9 s | 4.0 MB | ~110k |
+| Method | Time | Peak memory | Rows/sec |
+|---|---:|---:|---:|
+| `foreach` (assoc rows) | 5.06 s | 2.0 MB | 99k |
+| `nextRow()` (assoc rows) | 4.91 s | 2.0 MB | **102k** |
+| `nextRows(1000)` (assoc rows) | 5.06 s | 4.0 MB | 99k |
 
-`bench.php` automatically adds these rows when the file is present. The
-streaming design holds: a 354 MB sheet parses in under a second while peak
-memory stays at 4 MB.
+`bench.php` automatically adds these rows when the file is present. With
+wide rows, batching no longer helps — cell allocation dominates — and peak
+memory stays at 2-4 MB regardless of the 231 MB file size.
 
 ## Reproducing
 

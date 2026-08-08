@@ -65,24 +65,35 @@ bench('XlsxStreamer nextRows(1000) (assoc)', function () use ($path) {
     return $count;
 }, $expected);
 
-// Real-world file (optional): 100mb.xlsx is ~560 MB uncompressed; the
-// "Tablo3" sheet is a single 354 MB sheet4.xml. Kept out of git.
-$real = __DIR__ . '/data/100mb.xlsx';
+// Real-world file (optional): retail-sales-data.xlsx is a 231 MB workbook
+// with a single 500,000-row / 12-column sheet (~242 MB of sheet XML).
+// Kept out of git.
+$real = __DIR__ . '/data/retail-sales-data.xlsx';
 if (is_file($real)) {
     printf("%'-90s\n", '');
-    echo "real-world file present: tests/data/100mb.xlsx\n";
+    echo "real-world file present: tests/data/retail-sales-data.xlsx\n";
 
-    bench('real: first visible sheet (nextRows 1000)', function () use ($real) {
-        $s = new XlsxStreamer($real, null, true);
+    bench('real: foreach (assoc rows)', function () use ($real) {
         $count = 0;
-        while (($batch = $s->nextRows(1000)) !== null) {
-            $count += count($batch);
+        foreach (new XlsxStreamer($real, null, true) as $row) {
+            strlen($row['Order ID']);
+            $count++;
         }
         return $count;
     }, -1);
 
-    bench('real: Tablo3 sheet, 354 MB xml (nextRows 1000)', function () use ($real) {
-        $s = new XlsxStreamer($real, 'Tablo3', true);
+    bench('real: nextRow() (assoc rows)', function () use ($real) {
+        $s = new XlsxStreamer($real, null, true);
+        $count = 0;
+        while (($row = $s->nextRow()) !== null) {
+            strlen($row['Order ID']);
+            $count++;
+        }
+        return $count;
+    }, -1);
+
+    bench('real: nextRows(1000) (assoc rows)', function () use ($real) {
+        $s = new XlsxStreamer($real, null, true);
         $count = 0;
         while (($batch = $s->nextRows(1000)) !== null) {
             $count += count($batch);
