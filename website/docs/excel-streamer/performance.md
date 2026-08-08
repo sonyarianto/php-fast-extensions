@@ -40,6 +40,21 @@ The 729 ms for `nextRows(1000)` breaks down as roughly:
 Batching (`nextRows`) trims the PHP-side per-call overhead; the remaining
 work is the XML parse itself, which is inherently per-cell.
 
+## Real-world file
+
+`tests/data/100mb.xlsx` (not committed to git) is a ~100 MB zip containing
+~560 MB of uncompressed XML; the `Tablo3` sheet alone is a 354 MB
+`sheet4.xml`:
+
+| Sheet | XML size | Rows | Time | Peak memory | Rows/sec |
+|---|---|---|---:|---:|---:|
+| First visible | 9.3 MB | 27,000 | ~0.2 s | 2.0 MB | ~135k |
+| `Tablo3` | 354 MB | 99,928 | ~0.9 s | 4.0 MB | ~110k |
+
+`bench.php` automatically adds these rows when the file is present. The
+streaming design holds: a 354 MB sheet parses in under a second while peak
+memory stays at 4 MB.
+
 ## Reproducing
 
 ```bash

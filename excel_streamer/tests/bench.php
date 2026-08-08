@@ -15,7 +15,7 @@ function bench(string $label, callable $fn, int $expectedRows): void
     $t1 = hrtime(true);
     $ms = ($t1 - $t0) / 1e6;
     $peak = memory_get_peak_usage(true) / 1024 / 1024;
-    $valid = $count === $expectedRows ? 'OK ' : 'BAD';
+    $valid = $expectedRows < 0 || $count === $expectedRows ? 'OK ' : 'BAD';
     printf("%-35s %10s %12.1f %10.1f %9s %s\n", $label, number_format($count), $ms, $peak, $valid, number_format($count / ($ms / 1000)));
 }
 
@@ -64,3 +64,29 @@ bench('XlsxStreamer nextRows(1000) (assoc)', function () use ($path) {
     }
     return $count;
 }, $expected);
+
+// Real-world file (optional): 100mb.xlsx is ~560 MB uncompressed; the
+// "Tablo3" sheet is a single 354 MB sheet4.xml. Kept out of git.
+$real = __DIR__ . '/data/100mb.xlsx';
+if (is_file($real)) {
+    printf("%'-90s\n", '');
+    echo "real-world file present: tests/data/100mb.xlsx\n";
+
+    bench('real: first visible sheet (nextRows 1000)', function () use ($real) {
+        $s = new XlsxStreamer($real, null, true);
+        $count = 0;
+        while (($batch = $s->nextRows(1000)) !== null) {
+            $count += count($batch);
+        }
+        return $count;
+    }, -1);
+
+    bench('real: Tablo3 sheet, 354 MB xml (nextRows 1000)', function () use ($real) {
+        $s = new XlsxStreamer($real, 'Tablo3', true);
+        $count = 0;
+        while (($batch = $s->nextRows(1000)) !== null) {
+            $count += count($batch);
+        }
+        return $count;
+    }, -1);
+}

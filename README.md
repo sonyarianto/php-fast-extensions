@@ -238,9 +238,17 @@ On a 100,000-row / 8-column generated sheet (3.8 MB xlsx):
 | `nextRow()` (assoc rows) | 762 ms | 2.0 MB | 131k |
 | `nextRows(1000)` (assoc rows) | 729 ms | 2.0 MB | **137k** |
 
+Real-world file (100mb.xlsx, ~560 MB uncompressed zip):
+
+| Sheet | XML size | Rows | Time | Peak memory | Rows/sec |
+|---|---|---|---|---|---|
+| First visible | 9.3 MB | 27,000 | ~0.2 s | 2.0 MB | ~135k |
+| `Tablo3` | 354 MB | 99,928 | ~0.9 s | 4.0 MB | ~110k |
+
 There is no PHP stdlib baseline — PHP has no built-in XLSX reader. The
 classic alternative (loading the whole sheet into memory, e.g. via
-PhpSpreadsheet) peaks at the full file size; this reader stays at ~2 MB.
+PhpSpreadsheet) peaks at the full file size; this reader stays at 2-4 MB
+regardless of sheet size.
 
 ### Tests & benchmarks
 
