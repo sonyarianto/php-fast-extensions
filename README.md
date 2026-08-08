@@ -280,7 +280,6 @@ php -d extension=target/release/libexcel_streamer.so tests/bench.php
 
 ## Roadmap
 
-- Batch DB ingest mode (`ingestToDb()`) with bulk inserts
 - `cargo-php` stub generation for IDE autocomplete
 
 ## License
