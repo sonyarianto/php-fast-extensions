@@ -4,7 +4,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PHP: >=8.2](https://img.shields.io/badge/PHP-%3E%3D8.2-777BB4.svg)](https://www.php.net/)
 [![Rust: stable](https://img.shields.io/badge/Rust-stable-orange.svg)](https://www.rust-lang.org/)
-[![Benchmark: 9.8x faster than fgetcsv](https://img.shields.io/badge/Benchmark-9.8x%20faster%20than%20fgetcsv-blue.svg)](https://github.com/sonyarianto/php-fast-extensions/tree/main/csv_streamer/tests)
 
 A collection of high-performance PHP extensions written in Rust with
 [ext-php-rs](https://github.com/extphprs/ext-php-rs).
