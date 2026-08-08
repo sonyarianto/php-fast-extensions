@@ -242,9 +242,9 @@ Real-world file (`retail-sales-data.xlsx`, 231 MB, 500,000 rows × 12 cols):
 
 | Method | Time | Peak memory | Rows/sec |
 |---|---|---|---|
-| `foreach` (assoc rows) | 5.06 s | 2.0 MB | 99k |
-| `nextRow()` (assoc rows) | 4.91 s | 2.0 MB | **102k** |
-| `nextRows(1000)` (assoc rows) | 5.06 s | 4.0 MB | 99k |
+| `foreach` (assoc rows) | 4.6–5.1 s | 2.0 MB | 99–109k |
+| `nextRow()` (assoc rows) | 4.5–5.3 s | 2.0 MB | 94–112k |
+| `nextRows(1000)` (assoc rows) | 4.6–5.1 s | 4.0 MB | 99–108k |
 
 There is no PHP stdlib baseline — PHP has no built-in XLSX reader. The
 classic alternative (loading the whole sheet into memory, e.g. via
