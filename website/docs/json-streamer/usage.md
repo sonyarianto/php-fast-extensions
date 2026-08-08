@@ -6,7 +6,7 @@
 new JsonStreamer(string $path)
 ```
 
-The file's top level must be an array — otherwise construction throws.
+The file's top level must be an array — otherwise the first iteration throws.
 
 ## Iterating
 

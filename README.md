@@ -263,7 +263,7 @@ PhpSpreadsheet; XlsxStreamer does it in ~5 s with 2 MB.
 
 ```bash
 cd excel_streamer
-php tests/generate_xlsx.php          # generates small.xlsx + large.xlsx
+php tests/generate_xlsx.php          # generates small.xlsx + large.xlsx + edge.xlsx
 php -d extension=target/release/libexcel_streamer.so tests/test.php
 php -d extension=target/release/libexcel_streamer.so tests/bench.php
 ```
