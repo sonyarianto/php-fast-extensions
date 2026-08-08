@@ -38,8 +38,6 @@ features:
 | [CsvStreamer](/csv-streamer/) | Streaming CSV reader with associative rows, custom delimiters and two UTF-8 modes |
 | [XlsxStreamer](/excel-streamer/) | Streaming XLSX reader with constant memory, sheet selection and native cell types |
 
-More coming soon — batch database ingest.
-
 ## Quick start
 
 ```bash
