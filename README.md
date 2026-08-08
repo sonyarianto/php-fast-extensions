@@ -158,17 +158,6 @@ php -d extension=target/release/libcsv_streamer.so tests/bench.php
 (`tests/data/customers-2000000.csv`) — not committed to the repo, generate or
 place it there yourself.
 
-## Development
-
-Build, test and benchmark every extension from the repo root:
-
-```bash
-make build   # cargo build --release for all extensions
-make test    # build + run each extension's PHP test suite
-make bench   # build + run each extension's benchmark
-make clean
-```
-
 ## rust_excel_streamer
 
 A high-performance, streaming XLSX reader for PHP. Reads `.xlsx` / `.xlsm`
@@ -364,6 +353,17 @@ cd json_streamer
 php tests/generate_json.php         # generates small.json + large.json (226 MB)
 php -d extension=target/release/libjson_streamer.so tests/test.php
 php -d extension=target/release/libjson_streamer.so tests/bench.php
+```
+
+## Development
+
+Build, test and benchmark every extension from the repo root:
+
+```bash
+make build   # cargo build --release for all extensions
+make test    # build + run each extension's PHP test suite
+make bench   # build + run each extension's benchmark
+make clean
 ```
 
 ## IDE autocomplete
