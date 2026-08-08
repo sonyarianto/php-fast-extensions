@@ -14,6 +14,7 @@ A collection of high-performance PHP extensions written in Rust with
 |---|---|---|
 | `rust_csv_streamer` — streaming CSV reader | `csv_streamer/` | ✅ Working |
 | `rust_excel_streamer` — streaming XLSX reader | `excel_streamer/` | ✅ Working |
+| `rust_json_streamer` — streaming JSON array reader | `json_streamer/` | ✅ Working |
 
 ## IDE autocomplete
 
@@ -23,13 +24,18 @@ that only exist at runtime:
 
 - `csv_streamer/stubs/CsvStreamer.php`
 - `excel_streamer/stubs/XlsxStreamer.php`
+- `json_streamer/stubs/JsonStreamer.php`
 
 Point your IDE's include path at them, or add them to your project's
 `composer.json`:
 
 ```json
 "autoload": {
-    "files": ["csv_streamer/stubs/CsvStreamer.php", "excel_streamer/stubs/XlsxStreamer.php"]
+    "files": [
+        "csv_streamer/stubs/CsvStreamer.php",
+        "excel_streamer/stubs/XlsxStreamer.php",
+        "json_streamer/stubs/JsonStreamer.php"
+    ]
 }
 ```
 
@@ -294,6 +300,93 @@ cd excel_streamer
 php tests/generate_xlsx.php          # generates small.xlsx + large.xlsx
 php -d extension=target/release/libexcel_streamer.so tests/test.php
 php -d extension=target/release/libexcel_streamer.so tests/bench.php
+```
+
+## rust_json_streamer
+
+A high-performance, streaming reader for JSON files whose top level is a
+single large array (`[ {...}, {...}, ... ]`). Reads the file element by
+element from a small buffer, so memory usage stays constant no matter how
+big the array is. Implements PHP's `Iterator` interface.
+
+The classic `json_decode(file_get_contents($file))` holds the *entire*
+decoded array in memory (and the decoded string in between). JsonStreamer
+dodges both: a 1M-element array that needs ~2.1 GB with `json_decode`
+streams in ~2 MB. If your data is line-delimited (JSONL), plain PHP
+(`fgets` + `json_decode` per line) is already fine — this extension targets
+single giant arrays.
+
+### Features
+
+- **Streaming / lazy**: elements are scanned out of a 64 KB file buffer —
+  peak memory ~2 MB on a 1M-row / 226 MB file (vs 2.1 GB for `json_decode`)
+- **`foreach` support**: implements `Iterator` (`current`, `key`, `next`,
+  `rewind`, `valid`)
+- **`nextRow()` / `nextRows($n)` hot paths**: one call per element or one
+  call per batch
+- **Type fidelity**: integers stay `int`, floats stay `float` (including
+  `1000.0`-style input), `true`/`false`/`null` map to their PHP types,
+  strings preserve UTF-8 and escapes
+- **Shape mapping**: objects become associative arrays, arrays become lists,
+  scalar elements become single-element lists
+- **Robust parsing**: elements are parsed independently — one malformed
+  element throws `\Exception` with its index, strings with quotes/backslashes
+  are handled per the JSON spec
+- **Errors as exceptions**: missing files and malformed JSON throw
+  `\Exception`
+
+### Usage
+
+```php
+<?php
+// Iterate a huge top-level array — ~2 MB of memory regardless of size
+$streamer = new JsonStreamer('exports.json');
+foreach ($streamer as $i => $element) {
+    echo $element['id'], "\n"; // objects arrive as assoc arrays
+}
+
+// Batch reads amortize per-call overhead
+while (($rows = $streamer->nextRows(1000)) !== null) {
+    foreach ($rows as $row) { /* ... */ }
+}
+```
+
+### API
+
+`new JsonStreamer(string $path)`
+
+Implements `\Iterator` (`current`, `key`, `next`, `rewind`, `valid`), plus:
+
+| Method | Returns | Description |
+|---|---|---|
+| `nextRow()` | `array\|null` | Advance and return the next element in one call |
+| `nextRows(int $count)` | `array\|null` | Read up to `$count` elements in one batch |
+
+### Performance
+
+On a generated 1,000,000-row / 226 MB file (`{"id":1,...}`, 10 fields each),
+same machine, peak memory via `memory_get_peak_usage(true)`:
+
+| Method | Time | Peak memory | Rows/sec |
+|---|---|---|---|
+| `foreach` (assoc) | 4.6–4.9 s | 2.0 MB | 205–220k |
+| `nextRows(1000)` (assoc) | 5.1–5.2 s | 6.0 MB | 192–196k |
+| `json_decode` (default 128 MB limit) | fatal OOM after 39 ms | n/a | n/a |
+| `json_decode` (`memory_limit=-1`) | 5.6–5.8 s | ~2,100 MB | ~175k |
+
+`json_decode` cannot process the file at all under the default memory limit
+(tried to allocate 236 MB for a single element); with the limit lifted it
+finishes slightly slower while using ~1,000x the memory. JsonStreamer's
+edge is memory, not raw speed — use it when the file is too big to decode
+whole.
+
+### Tests & benchmarks
+
+```bash
+cd json_streamer
+php tests/generate_json.php         # generates small.json + large.json (226 MB)
+php -d extension=target/release/libjson_streamer.so tests/test.php
+php -d extension=target/release/libjson_streamer.so tests/bench.php
 ```
 
 ## License

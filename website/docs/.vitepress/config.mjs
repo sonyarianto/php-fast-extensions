@@ -11,6 +11,7 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'CsvStreamer', link: '/csv-streamer/' },
       { text: 'XlsxStreamer', link: '/excel-streamer/' },
+      { text: 'JsonStreamer', link: '/json-streamer/' },
       { text: 'GitHub', link: 'https://github.com/sonyarianto/php-fast-extensions' },
     ],
 
@@ -36,6 +37,18 @@ export default defineConfig({
             { text: 'Usage', link: '/excel-streamer/usage' },
             { text: 'API Reference', link: '/excel-streamer/api' },
             { text: 'Performance', link: '/excel-streamer/performance' },
+          ],
+        },
+      ],
+      '/json-streamer/': [
+        {
+          text: 'JsonStreamer',
+          items: [
+            { text: 'Overview', link: '/json-streamer/' },
+            { text: 'Installation', link: '/json-streamer/installation' },
+            { text: 'Usage', link: '/json-streamer/usage' },
+            { text: 'API Reference', link: '/json-streamer/api' },
+            { text: 'Performance', link: '/json-streamer/performance' },
           ],
         },
       ],
