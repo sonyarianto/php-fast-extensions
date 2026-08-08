@@ -51,6 +51,9 @@ works directly with `foreach`.
 - PHP development headers (`php-config`, e.g. `php8.3-dev` on Debian)
 - Clang (`libclang-dev` on Debian) — required by ext-php-rs build script
 
+> **Platform support**: built and CI-tested on Linux. macOS and Windows are
+> untested; build from source at your own risk.
+
 ### Build
 
 ```bash
