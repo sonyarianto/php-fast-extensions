@@ -249,4 +249,43 @@ build_workbook(
     $shared
 );
 
+// ---- edge.xlsx: boundary cases for malformed-input tests ----
+
+$bigCell = str_repeat('x', 1024 * 1024);
+$bigSheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+    . '<sheetData>'
+    . '<row r="1">'
+    . '<c r="A1" t="inlineStr"><is><t>' . xmlesc($bigCell) . '</t></is></c>'
+    . '<c r="B1"><v>1e300</v></c>'
+    . '</row>'
+    . '<row r="2">'
+    . '<c r="A2" t="inlineStr"><is><t>plain</t></is></c>'
+    . '</row>'
+    . '</sheetData></worksheet>';
+
+// The xlsx_batch_reader crate requires the r attribute on <row>; a missing
+// one must fail loudly instead of producing garbage.
+$noRefSheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+    . '<sheetData>'
+    . '<row>'
+    . '<c t="inlineStr"><is><t>noref</t></is></c>'
+    . '</row>'
+    . '</sheetData></worksheet>';
+
+build_workbook(
+    "$dataDir/edge.xlsx",
+    ['Empty', 'HeadersOnly', 'Big', 'NoRef'],
+    [
+        'Empty' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            . '<sheetData></sheetData></worksheet>',
+        'HeadersOnly' => write_sheet_xml([array_map($h, ['id', 'name'])], []),
+        'Big' => $bigSheet,
+        'NoRef' => $noRefSheet,
+    ],
+    []
+);
+
 echo "done.\n";

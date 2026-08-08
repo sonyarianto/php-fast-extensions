@@ -129,6 +129,77 @@ try {
 $s = new CsvStreamer("$data/small.csv", ',', false, true);
 check('strict mode passes valid UTF-8', iterator_count($s) === 6);
 
+// --- 9c. Malformed & boundary inputs ---
+// CRLF, lone CR and lone LF all terminate records (RFC 4180 + practical leniency)
+file_put_contents("$data/eol.csv", "a,b\r\n1,2\r\n3,4\n5,6\r");
+$s = new CsvStreamer("$data/eol.csv");
+check('CRLF/CR/LF mixed line endings', iterator_to_array($s, false) === [['a', 'b'], ['1', '2'], ['3', '4'], ['5', '6']]);
+
+// Quoted field containing a newline = one record with an embedded newline
+file_put_contents("$data/embedded_nl.csv", "id,note\n1,\"line1\nline2\"\n2,x\n");
+$s = new CsvStreamer("$data/embedded_nl.csv", ',', true);
+$rows = iterator_to_array($s);
+check('quoted embedded newline is one record', count($rows) === 2);
+check('embedded newline preserved', $rows[0]['note'] === "line1\nline2");
+
+// Unterminated quote: parser must not hang or crash; rest of file becomes one field
+file_put_contents("$data/unclosed_quote.csv", "a,b\n\"oops,2\n3,4\n");
+$s = new CsvStreamer("$data/unclosed_quote.csv");
+$rows = iterator_to_array($s, false);
+check('unclosed quote survives to EOF', count($rows) === 2);
+check('unclosed quote swallows remainder as one field', $rows[1] === ["oops,2\n3,4\n"]);
+
+// Ragged rows are allowed (flexible mode)
+file_put_contents("$data/ragged.csv", "a,b,c\n1,2\n3,4,5,6\n");
+$s = new CsvStreamer("$data/ragged.csv");
+$rows = iterator_to_array($s, false);
+check('ragged rows parsed', $rows[1] === ['1', '2'] && $rows[2] === ['3', '4', '5', '6']);
+
+// Empty quoted field and unquoted empty field are both empty strings
+file_put_contents("$data/empty_fields.csv", "a,b,c\n\"\",,\n");
+$s = new CsvStreamer("$data/empty_fields.csv");
+$rows = iterator_to_array($s, false);
+check('quoted and bare empty fields', $rows[1] === ['', '', '']);
+
+// Spaces are field content, not trimmed (RFC 4180)
+file_put_contents("$data/spaces.csv", "a,b\n x , y \n");
+$s = new CsvStreamer("$data/spaces.csv");
+$rows = iterator_to_array($s, false);
+check('spaces preserved verbatim', $rows[1] === [' x ', ' y ']);
+
+// Single-column file (no delimiter at all)
+file_put_contents("$data/single_col.csv", "one\ntwo\nthree\n");
+$s = new CsvStreamer("$data/single_col.csv");
+check('single-column file', iterator_to_array($s, false) === [['one'], ['two'], ['three']]);
+
+// BOM only in the middle of the file is content, not stripped
+file_put_contents("$data/bom_mid.csv", "a,b\n\xEF\xBB\xBFx,y\n");
+$s = new CsvStreamer("$data/bom_mid.csv");
+$rows = iterator_to_array($s, false);
+check('mid-file BOM kept as content', $rows[1][0] === "\xEF\xBB\xBFx");
+
+// Header-only file yields zero data rows
+file_put_contents("$data/header_only.csv", "id,name\n");
+$s = new CsvStreamer("$data/header_only.csv", ',', true);
+check('header-only file yields nothing', iterator_count($s) === 0);
+check('header-only headers() still works', $s->headers() === ['id', 'name']);
+
+// Large single cell (1 MB) round-trips intact
+$big = str_repeat('x', 1024 * 1024);
+file_put_contents("$data/big_cell.csv", "a,b\n1,$big\n");
+$s = new CsvStreamer("$data/big_cell.csv");
+$rows = iterator_to_array($s, false);
+check('1 MB cell round-trips', $rows[1][1] === $big);
+unlink("$data/big_cell.csv");
+
+// NUL bytes pass through lenient mode (NUL is valid UTF-8, so strict too)
+file_put_contents("$data/nul.csv", "a,b\nx\x00y,z\n");
+$s = new CsvStreamer("$data/nul.csv");
+$rows = iterator_to_array($s, false);
+check('NUL byte preserved', $rows[1][0] === "x\x00y");
+$s = new CsvStreamer("$data/nul.csv", ',', false, true);
+check('NUL byte passes strict mode', iterator_count($s) === 2);
+
 // --- 10. Memory stability: large file (compare to memory_limit-ish) ---
 $s = new CsvStreamer("$data/large.csv");
 $sum = 0;

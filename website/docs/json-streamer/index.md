@@ -46,6 +46,6 @@ per line) is already fine — this extension targets single giant arrays.
 
 ## Limitations
 
-- Top level must be an array; other shapes throw at construction time
+- Top level must be an array; other shapes throw on the first iteration
 - Reading only — no writing, no JSONP / newline-delimited formats
 - `rewind()` re-opens the file from the start (rare, so acceptable)

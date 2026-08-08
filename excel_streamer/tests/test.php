@@ -124,5 +124,42 @@ check('large file 100k rows', $count === 100000);
 check('large file sum correct', $sum === 100000 * 100001 / 2);
 check('large file peak memory < 20MB', memory_get_peak_usage(true) / 1024 / 1024 < 20);
 
+// --- 10. Malformed & boundary workbooks ---
+// Corrupt zip: random bytes pretending to be an xlsx
+file_put_contents("$data/corrupt.xlsx", random_bytes(4096));
+expect_exception(fn () => new XlsxStreamer("$data/corrupt.xlsx"), 'corrupt zip throws on construct');
+expect_exception(fn () => XlsxStreamer::sheets("$data/corrupt.xlsx"), 'corrupt zip throws in sheets()');
+
+// Truncated xlsx: the zip central directory is at the end, so half a file is unreadable
+$bytes = file_get_contents("$data/small.xlsx");
+file_put_contents("$data/truncated.xlsx", substr($bytes, 0, intdiv(strlen($bytes), 2)));
+expect_exception(fn () => new XlsxStreamer("$data/truncated.xlsx"), 'truncated xlsx throws on construct');
+
+// Empty sheet: zero rows, still opens
+$s = new XlsxStreamer("$data/edge.xlsx", 'Empty');
+check('empty sheet yields nothing', iterator_count($s) === 0);
+check('empty sheet still names itself', $s->sheetName() === 'Empty');
+
+// Header-only sheet
+$s = new XlsxStreamer("$data/edge.xlsx", 'HeadersOnly', true);
+check('header-only sheet yields nothing', iterator_count($s) === 0);
+check('header-only headers() works', $s->headers() === ['id', 'name']);
+
+// Big cell + exponent float
+$s = new XlsxStreamer("$data/edge.xlsx", 'Big');
+$rows = iterator_to_array($s);
+check('1 MB cell round-trips', strlen($rows[0][0]) === 1024 * 1024 && $rows[0][0] === str_repeat('x', 1024 * 1024));
+check('exponent float preserved as float', $rows[0][1] === 1e300 && is_float($rows[0][1]));
+check('second Big row parsed', $rows[1][0] === 'plain');
+
+// Row without r attribute: the underlying crate requires it — must throw loudly
+// (lazily, during iteration, not at construction)
+$s = new XlsxStreamer("$data/edge.xlsx", 'NoRef');
+expect_exception(fn () => iterator_count($s), 'row without r attribute throws during iteration');
+
+// Cleanup transient fixtures (data dir is gitignored anyway)
+@unlink("$data/corrupt.xlsx");
+@unlink("$data/truncated.xlsx");
+
 echo "\n" . ($failed === 0 ? "ALL TESTS PASSED" : "$failed TESTS FAILED") . " ($passed passed)\n";
 exit($failed === 0 ? 0 : 1);

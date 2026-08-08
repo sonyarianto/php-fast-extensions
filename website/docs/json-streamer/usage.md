@@ -80,5 +80,5 @@ All failures are thrown as `\Exception`:
 | Situation | Behavior |
 |---|---|
 | File does not exist / cannot be opened | `\Exception` in constructor |
-| Top level is not an array | `\Exception` in constructor |
+| Top level is not an array / file is empty | `\Exception` on the first iteration |
 | Malformed JSON element | `\Exception` during iteration, naming the element index |

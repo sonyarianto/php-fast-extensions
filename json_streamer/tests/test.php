@@ -110,6 +110,86 @@ foreach ($s as $row) {
 }
 check('second pass identical', $first === [1, 2, 3]);
 
+echo "== malformed & boundary ==" . "\n";
+$tmp = "$dataDir/tmp_malformed.json";
+$expectThrow = function (string $label, string $content, bool $duringIteration = false) use ($tmp) {
+    file_put_contents($tmp, $content);
+    try {
+        $s = new JsonStreamer($tmp);
+        if ($duringIteration) {
+            foreach ($s as $row) {
+            }
+        }
+        check($label, false);
+    } catch (\Exception $e) {
+        check($label, true);
+    } finally {
+        unlink($tmp);
+    }
+};
+
+$expectThrow('top-level object throws', '{"a":1}', true);
+$expectThrow('empty file throws', '', true);
+$expectThrow('whitespace-only file throws', "   \n\t ", true);
+$expectThrow('unterminated element throws', '[1, 2', true);
+$expectThrow('unterminated element at EOF throws', '["abc"', true);
+$expectThrow('malformed element throws during iteration', '[{"id":1}, {"x":}]', true);
+
+// Scalar-only and trailing-scalar arrays — the closing bracket must be
+// recognized even after a scalar element
+file_put_contents($tmp, '[1, "two", true, null, 3.5]');
+$rows = iterator_to_array(new JsonStreamer($tmp));
+check('scalar elements become single-element lists', $rows === [[1], ['two'], [true], [null], [3.5]]);
+unlink($tmp);
+
+file_put_contents($tmp, '[1, 2]');
+check('trailing scalar array parses', iterator_to_array(new JsonStreamer($tmp), false) === [[1], [2]]);
+unlink($tmp);
+
+file_put_contents($tmp, "  [ 1 , 2 ]  \n\t ");
+check('whitespace-heavy array parses', iterator_to_array(new JsonStreamer($tmp), false) === [[1], [2]]);
+unlink($tmp);
+
+file_put_contents($tmp, '[1,2,]');
+check('trailing comma tolerated', iterator_to_array(new JsonStreamer($tmp), false) === [[1], [2]]);
+unlink($tmp);
+
+file_put_contents($tmp, '[1,2] trailing garbage');
+check('trailing garbage after ] ignored', iterator_to_array(new JsonStreamer($tmp), false) === [[1], [2]]);
+unlink($tmp);
+
+file_put_contents($tmp, '[]');
+check('empty array yields nothing', iterator_count(new JsonStreamer($tmp)) === 0);
+unlink($tmp);
+
+file_put_contents($tmp, '[ ]');
+check('whitespace-only array yields nothing', iterator_count(new JsonStreamer($tmp)) === 0);
+unlink($tmp);
+
+file_put_contents($tmp, '[[1,2],[3]]');
+$rows = iterator_to_array(new JsonStreamer($tmp));
+check('array elements become list rows', $rows === [[1, 2], [3]]);
+unlink($tmp);
+
+file_put_contents($tmp, '[""]');
+check('empty-string element', iterator_to_array(new JsonStreamer($tmp)) === [['']]);
+unlink($tmp);
+
+// Integer boundary fidelity: i64 min/max stay int, u64 max overflows to float
+file_put_contents($tmp, '[9223372036854775807, -9223372036854775808, 18446744073709551615]');
+$rows = iterator_to_array(new JsonStreamer($tmp), false);
+check('i64 max stays int', $rows[0] === [PHP_INT_MAX]);
+check('i64 min stays int', $rows[1] === [PHP_INT_MIN]);
+check('u64 max overflows to float (json_decode parity)', is_float($rows[2][0]) && $rows[2][0] === 18446744073709551615.0);
+unlink($tmp);
+
+// Large single element (1 MB string) round-trips
+$big = str_repeat('y', 1024 * 1024);
+file_put_contents($tmp, '["' . $big . '"]');
+$rows = iterator_to_array(new JsonStreamer($tmp));
+check('1 MB string element round-trips', $rows[0][0] === $big);
+unlink($tmp);
+
 echo "== large file (1M rows, 226 MB) ==" . "\n";
 $t0 = hrtime(true);
 $n = 0;

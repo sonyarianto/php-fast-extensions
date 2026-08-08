@@ -22,6 +22,7 @@ struct ChunkReader<R: Read> {
     len: usize,
     pos: usize,
     eof: bool,
+    pushback: Option<u8>,
 }
 
 impl<R: Read> ChunkReader<R> {
@@ -32,10 +33,14 @@ impl<R: Read> ChunkReader<R> {
             len: 0,
             pos: 0,
             eof: false,
+            pushback: None,
         }
     }
 
     fn next_byte(&mut self) -> std::io::Result<Option<u8>> {
+        if let Some(b) = self.pushback.take() {
+            return Ok(Some(b));
+        }
         if self.pos >= self.len {
             if self.eof {
                 return Ok(None);
@@ -50,6 +55,13 @@ impl<R: Read> ChunkReader<R> {
         let b = self.buf[self.pos];
         self.pos += 1;
         Ok(Some(b))
+    }
+
+    /// Return a byte to the stream; the next `next_byte()` yields it again.
+    /// Used to leave an element terminator (`,` or `]`) for the next scan.
+    fn unread(&mut self, b: u8) {
+        debug_assert!(self.pushback.is_none());
+        self.pushback = Some(b);
     }
 }
 
@@ -68,15 +80,22 @@ fn skip_ws(r: &mut ChunkReader<File>) -> std::io::Result<Option<u8>> {
 
 /// Scan the next element of the top-level array, returning its raw bytes.
 /// Returns None once the array is exhausted. Elements are parsed
-/// independently by serde_json afterwards.
-fn next_element(r: &mut ChunkReader<File>) -> std::io::Result<Option<Vec<u8>>> {
+/// independently by serde_json afterwards. `first` marks the very first
+/// scan of the reader, which must find the array's opening bracket.
+fn next_element(r: &mut ChunkReader<File>, first: bool) -> std::io::Result<Option<Vec<u8>>> {
     let mut b = match skip_ws(r)? {
         Some(b) => b,
         None => return Err(eof_err("unexpected end of file inside top-level array")),
     };
-    if b == b'[' {
-        // consume the top-level array's opening bracket (first call only;
-        // a '[' can never otherwise be the first byte of a call)
+    if first {
+        // consume the top-level array's opening bracket (a '[' can never
+        // otherwise be the first byte of a call), and reject any other shape
+        if b != b'[' {
+            return Err(std::io::Error::new(
+                ErrorKind::InvalidData,
+                format!("top-level JSON value is not an array (starts with '{}')", b as char),
+            ));
+        }
         b = skip_ws(r)?.ok_or_else(|| eof_err("unexpected end of file after '['"))?;
     }
     if b == b']' {
@@ -84,6 +103,9 @@ fn next_element(r: &mut ChunkReader<File>) -> std::io::Result<Option<Vec<u8>>> {
     }
     if b == b',' {
         b = skip_ws(r)?.ok_or_else(|| eof_err("unexpected end of file after comma"))?;
+        if b == b']' {
+            return Ok(None); // trailing comma before the closing bracket
+        }
     }
 
     let mut out = Vec::new();
@@ -122,13 +144,17 @@ fn next_element(r: &mut ChunkReader<File>) -> std::io::Result<Option<Vec<u8>>> {
                         }
                     } else {
                         // scalar element terminated by the array's closing
-                        // bracket; do not consume it
+                        // bracket; leave it for the next call to recognize
+                        r.unread(b);
                         return Ok(Some(out));
                     }
                 }
                 b',' => {
                     if depth == 0 {
-                        return Ok(Some(out)); // scalar element ended by comma
+                        // scalar element ended by a comma; leave the comma for
+                        // the next call, which consumes it before scanning
+                        r.unread(b);
+                        return Ok(Some(out));
                     }
                     out.push(b);
                 }
@@ -236,6 +262,7 @@ pub struct JsonStreamer {
     row: i64,
     done: bool,
     fetched: bool,
+    first_fetch: bool,
 }
 
 #[php_impl]
@@ -257,6 +284,7 @@ impl JsonStreamer {
             row: 0,
             done: false,
             fetched: false,
+            first_fetch: true,
         })
     }
 
@@ -303,6 +331,7 @@ impl JsonStreamer {
         self.row = 0;
         self.done = false;
         self.fetched = false;
+        self.first_fetch = true;
         Ok(())
     }
 
@@ -359,8 +388,9 @@ fn fetch_next(s: &mut JsonStreamer) -> PhpResult<()> {
         s.done = true;
         return Ok(());
     };
-    match next_element(reader) {
+    match next_element(reader, s.first_fetch) {
         Ok(Some(bytes)) => {
+            s.first_fetch = false;
             let value: Value = serde_json::from_slice(&bytes).map_err(|e| {
                 format!(
                     "Malformed JSON element at index {}: {} (near: {})",

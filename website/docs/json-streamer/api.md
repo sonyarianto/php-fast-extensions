@@ -14,8 +14,8 @@ final class JsonStreamer implements \Iterator
 |---|---|---|
 | `$path` | `string` | Path to a UTF-8 JSON file whose top level is an array |
 
-Throws `\Exception` if the file cannot be opened or the top level is not an
-array.
+Throws `\Exception` if the file cannot be opened. A top level that is not
+an array (or an empty file) throws `\Exception` on the first iteration.
 
 ## Iterator methods
 
