@@ -10,7 +10,7 @@ PhpSpreadsheet memory spikes.
 XLSX files are zip containers holding sheet XML. Loading a 100 MB sheet into
 memory (the common approach) means holding 100 MB of parsed rows at once.
 `XlsxStreamer` reads the sheet XML incrementally in batches of 1,000 rows and
-releases each batch before pulling the next — peak memory stays around 2 MB
+releases each batch before pulling the next — peak memory stays at 2-4 MB
 regardless of file size.
 
 ## Feature highlights

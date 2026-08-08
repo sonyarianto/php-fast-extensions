@@ -15,8 +15,8 @@ hero:
 
 features:
   - icon: ⚡
-    title: Up to 9.6x faster
-    details: Parses CSV with the Rust csv crate — ~5x faster than fgetcsv on synthetic data, ~9.6x on real-world 2M-row files.
+    title: Up to 9.8x faster
+    details: Parses CSV with the Rust csv crate — ~6.6x faster than fgetcsv on synthetic data, ~9.8x on real-world 2M-row files.
   - icon: 🧠
     title: Constant memory
     details: Lazy, row-by-row streaming with a single reused buffer. Peak memory ~2 MB on a 349 MB file. No memory_limit errors.

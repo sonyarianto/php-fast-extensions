@@ -35,7 +35,7 @@ while (($row = $streamer->nextRow()) !== null) {
     echo $row['name'], "\n";
 }
 
-// Batched — one call per 1,000 rows, best throughput
+// Batched — one call per 1,000 rows, fewest PHP calls
 $streamer = new XlsxStreamer('report.xlsx', null, true);
 while (($batch = $streamer->nextRows(1000)) !== null) {
     foreach ($batch as $row) {
