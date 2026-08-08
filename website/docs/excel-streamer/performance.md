@@ -56,6 +56,28 @@ uncompressed sheet XML):
 wide rows, batching no longer helps — cell allocation dominates — and peak
 memory stays at 2-4 MB regardless of the 231 MB file size.
 
+## Comparison with PhpSpreadsheet
+
+Same file, same machine (100,000 rows × 8 cols, 3.8 MB xlsx,
+PhpSpreadsheet 5.9 with `setReadDataOnly(true)`):
+
+| | PhpSpreadsheet | XlsxStreamer |
+|---|---|---|
+| Time | 39.1 s | 0.75 s |
+| Peak memory | 466 MB | 2 MB |
+
+Roughly **50x faster and 230x less memory** for bulk value extraction.
+
+Honest caveats:
+
+- PhpSpreadsheet is a full spreadsheet toolkit (styles, formulas, merged
+  cells, charts, file writing, many formats); this comparison covers only
+  reading cell values, which is all XlsxStreamer does
+- PhpSpreadsheet's chunked `ReadFilter` mode can cap memory too, but it
+  re-parses the file once per chunk and is much slower
+- Extrapolating, the 500,000-row retail workbook above would need roughly
+  3.5 GB with PhpSpreadsheet; XlsxStreamer streams it in ~5 s with 2 MB
+
 ## Reproducing
 
 ```bash

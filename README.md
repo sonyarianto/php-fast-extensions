@@ -251,6 +251,25 @@ classic alternative (loading the whole sheet into memory, e.g. via
 PhpSpreadsheet) peaks at the full file size; this reader stays at 2-4 MB
 regardless of sheet size.
 
+### Comparison with PhpSpreadsheet
+
+Same file, same machine (100,000 rows × 8 cols, 3.8 MB xlsx):
+
+| | PhpSpreadsheet 5.9 (data-only) | XlsxStreamer |
+|---|---|---|
+| Time | 39.1 s | 0.75 s |
+| Peak memory | 466 MB | 2 MB |
+| Reads | full in-memory load | streaming (constant memory) |
+
+That is roughly **50x faster and 230x less memory** for bulk value
+extraction. Honest caveats: PhpSpreadsheet is a full spreadsheet toolkit
+(styles, formulas, merged cells, charts, *writing* files, many formats) —
+this comparison covers only reading cell values, which is all XlsxStreamer
+does. PhpSpreadsheet's chunked `ReadFilter` mode can cap memory too, but it
+re-parses the file per chunk and is much slower. Extrapolating, the
+500,000-row retail workbook above would need roughly 3.5 GB with
+PhpSpreadsheet; XlsxStreamer does it in ~5 s with 2 MB.
+
 ### Tests & benchmarks
 
 ```bash
