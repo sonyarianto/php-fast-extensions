@@ -149,6 +149,17 @@ php -d extension=target/release/librust_csv_streamer.so tests/bench.php
 (`tests/data/customers-2000000.csv`) — not committed to the repo, generate or
 place it there yourself.
 
+## Development
+
+Build, test and benchmark every extension from the repo root:
+
+```bash
+make build   # cargo build --release for all extensions
+make test    # build + run each extension's PHP test suite
+make bench   # build + run each extension's benchmark
+make clean
+```
+
 ## Roadmap
 
 - Excel streaming (`.xlsx`) — see the `xlsx_batch_reader` approach for

@@ -5,9 +5,6 @@ hero:
   name: "php-fast-extensions"
   text: "High-performance PHP extensions written in Rust"
   tagline: "Native Zend API bindings via ext-php-rs. Streaming, constant-memory readers that leave the standard library in the dust."
-  image:
-    src: /logo.svg
-    alt: php-fast-extensions
   actions:
     - theme: brand
       text: Get Started

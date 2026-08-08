@@ -7,8 +7,6 @@ export default defineConfig({
   cleanUrls: true,
 
   themeConfig: {
-    logo: '/logo.svg',
-
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Extensions', link: '/csv-streamer/' },
