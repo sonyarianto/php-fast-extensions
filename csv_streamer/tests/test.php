@@ -54,6 +54,20 @@ check('nextRow() advances', $row['name'] === 'Bob "The Builder"');
 while ($s->nextRow() !== null) { /* drain */ }
 check('nextRow() returns null at EOF', $s->nextRow() === null);
 
+// --- 3c. nextRows() batching ---
+$s = new CsvStreamer("$data/small.csv", ',', true);
+$batch = $s->nextRows(2);
+check('nextRows(2) returns 2 rows', is_array($batch) && count($batch) === 2);
+check('nextRows(2) first row keyed by header', $batch[0] === ['id' => '1', 'name' => 'Alice', 'note' => 'hello, world']);
+check('nextRows(2) advances', $batch[1]['name'] === 'Bob "The Builder"');
+$batch = $s->nextRows(10);
+check('nextRows(10) returns remaining 3 rows', is_array($batch) && count($batch) === 3);
+check('nextRows() returns null at EOF', $s->nextRows(1) === null);
+$s = new CsvStreamer("$data/small.csv", ',', true);
+$batch = $s->nextRows(100);
+check('nextRows(100) drains whole file in one batch', is_array($batch) && count($batch) === 5);
+check('nextRows(0) returns null', $s->nextRows(0) === null);
+
 // --- 4. Rewind ---
 $s = new CsvStreamer("$data/small.csv", ',', true);
 foreach ($s as $row) { /* drain */ }

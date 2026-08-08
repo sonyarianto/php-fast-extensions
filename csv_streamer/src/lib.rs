@@ -56,6 +56,35 @@ pub struct CsvStreamer {
     done: bool,
 }
 
+impl CsvStreamer {
+    /// Build a PHP array from a parsed record, keyed by header name when
+    /// headers are enabled, else a sequential list.
+    fn build_row(
+        record: &csv::ByteRecord,
+        headers: &[ZBox<ZendStr>],
+        has_headers: bool,
+    ) -> ZBox<ZendHashTable> {
+        let mut ht = ZendHashTable::with_capacity(record.len() as u32);
+        if has_headers {
+            for (i, field) in record.iter().enumerate() {
+                match headers.get(i) {
+                    Some(key) => {
+                        let _ = ht.insert(key, CsvCell(field));
+                    }
+                    None => {
+                        let _ = ht.insert(i as i64, CsvCell(field));
+                    }
+                }
+            }
+        } else {
+            for field in record.iter() {
+                let _ = ht.push(CsvCell(field));
+            }
+        }
+        ht
+    }
+}
+
 #[php_impl]
 impl CsvStreamer {
     /// Open a CSV file for streaming.
@@ -133,24 +162,7 @@ impl CsvStreamer {
         if !self.fetched || self.done {
             return None;
         }
-        let mut ht = ZendHashTable::with_capacity(self.record.len() as u32);
-        if self.has_headers {
-            for (i, field) in self.record.iter().enumerate() {
-                match self.headers.get(i) {
-                    Some(key) => {
-                        let _ = ht.insert(key, CsvCell(field));
-                    }
-                    None => {
-                        let _ = ht.insert(i as i64, CsvCell(field));
-                    }
-                }
-            }
-        } else {
-            for field in self.record.iter() {
-                let _ = ht.push(CsvCell(field));
-            }
-        }
-        Some(ht)
+        Some(Self::build_row(&self.record, &self.headers, self.has_headers))
     }
 
     /// Return the 0-based index of the current row.
@@ -190,6 +202,34 @@ impl CsvStreamer {
     pub fn next_row(&mut self) -> PhpResult<Option<ZBox<ZendHashTable>>> {
         self.next()?;
         Ok(self.current())
+    }
+
+    /// Read up to `$count` rows in a single call, amortizing the per-call
+    /// overhead across the whole batch.
+    ///
+    /// Returns an array of row arrays (fewer than `$count` at end of file),
+    /// or null when no rows remain. `$count` must be positive.
+    ///
+    /// @param int $count Maximum number of rows to read.
+    /// @return array|null
+    pub fn next_rows(&mut self, count: i64) -> PhpResult<Option<ZBox<ZendHashTable>>> {
+        let count = count.clamp(0, i32::MAX as i64) as u32;
+        if count == 0 || self.done {
+            return Ok(None);
+        }
+        let mut out = ZendHashTable::with_capacity(count);
+        for _ in 0..count {
+            self.next()?;
+            if self.done {
+                break;
+            }
+            out.push(Self::build_row(&self.record, &self.headers, self.has_headers))?;
+        }
+        if out.len() == 0 {
+            Ok(None)
+        } else {
+            Ok(Some(out))
+        }
     }
 
     /// Rewind to the first row. The file is re-opened at offset 0 and the

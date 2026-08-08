@@ -39,6 +39,34 @@ while (($row = $streamer->nextRow()) !== null) {
 }
 ```
 
+### nextRows($n) — batch reads
+
+Reads up to `$n` rows per call, amortizing the per-call overhead across the
+whole batch. Returns fewer rows near end of file, and `null` when no rows
+remain:
+
+```php
+<?php
+$streamer = new CsvStreamer('customers.csv', ',', true);
+
+while (($batch = $streamer->nextRows(1000)) !== null) {
+    foreach ($batch as $row) {
+        echo $row['email'], "\n";
+    }
+}
+```
+
+How to choose between the three styles:
+
+| Style | Best for | Notes |
+|---|---|---|
+| `foreach` | Iterator semantics | Rewindable, integrates with `iterator_to_array()` etc. |
+| `nextRow()` | Wide rows (many/long fields) | Real-world files: ~same as `nextRows` |
+| `nextRows($n)` | Narrow rows, batch ingest | ~40% faster than `foreach` on narrow rows; each batch costs memory (~4 MB per 1,000 wide rows), so pick `$n` accordingly |
+
+All three styles can be mixed on the same object — they all just advance the
+underlying reader, and a `rewind()` always starts over from the first row.
+
 ## Rows
 
 Without headers, rows are sequential lists:

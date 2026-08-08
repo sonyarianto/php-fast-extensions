@@ -66,8 +66,15 @@ $t['ext_nextrow'] = run('CsvStreamer nextRow() (assoc rows)', function () use ($
     $s = new CsvStreamer($path, ',', true);
     while (($row = $s->nextRow()) !== null) { (int) $row['Index']; strlen($row['Email']); }
 });
+$t['ext_nextrows'] = run('CsvStreamer nextRows(1000) (assoc rows)', function () use ($path) {
+    $s = new CsvStreamer($path, ',', true);
+    while (($rows = $s->nextRows(1000)) !== null) {
+        foreach ($rows as $row) { (int) $row['Index']; strlen($row['Email']); }
+    }
+});
 
 echo "\nspeedup vs fgetcsv (list):\n";
 printf("  foreach   list : x%.2f\n", $t['fgetcsv_list'] / $t['ext_list']);
 printf("  foreach   assoc: x%.2f\n", $t['fgetcsv_assoc'] / $t['ext_assoc']);
 printf("  nextRow() assoc: x%.2f\n", $t['fgetcsv_list'] / $t['ext_nextrow']);
+printf("  nextRows() assoc: x%.2f\n", $t['fgetcsv_list'] / $t['ext_nextrows']);

@@ -120,6 +120,7 @@ Convenience:
 | Method | Returns | Description |
 |---|---|---|
 | `nextRow()` | `array\|null` | Advance and return the row in one call |
+| `nextRows(int $count)` | `array\|null` | Read up to `$count` rows in one batch |
 | `headers()` | `array\|null` | Header row as a list, or null when disabled |
 
 ### Performance
@@ -130,11 +131,12 @@ byte-identical between readers, peak memory measured with
 
 | Method | Time | Peak memory | Speedup |
 |---|---|---|---|
-| `fgetcsv` | 21,259 ms | 2.0 MB | x1.00 |
-| `CsvStreamer` `foreach` (list) | 2,220 ms | 2.0 MB | **x9.6** |
-| `CsvStreamer` `foreach` (assoc) | 2,492 ms | 2.0 MB | **x9.2** |
-| `CsvStreamer` `nextRow()` (assoc) | 2,278 ms | 2.0 MB | **x9.3** |
-| `fgetcsv` + `array_combine` (assoc) | 22,864 ms | 2.0 MB | x1.00 |
+| `fgetcsv` | 22,149 ms | 2.0 MB | x1.00 |
+| `CsvStreamer` `foreach` (list) | 2,264 ms | 2.0 MB | **x9.8** |
+| `CsvStreamer` `foreach` (assoc) | 2,494 ms | 2.0 MB | **x8.9** |
+| `CsvStreamer` `nextRow()` (assoc) | 2,369 ms | 2.0 MB | **x9.4** |
+| `CsvStreamer` `nextRows(1000)` (assoc) | 2,342 ms | 4.0 MB | **x9.5** |
+| `fgetcsv` + `array_combine` (assoc) | 22,107 ms | 2.0 MB | x1.00 |
 
 Design notes that got it there: header keys cached as PHP `zend_string`s
 (`ArrayKey::ZendString` — no per-row key allocation or hashing), keyless

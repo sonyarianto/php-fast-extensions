@@ -5,12 +5,30 @@ verified byte-identical between all readers, and memory was measured with
 `memory_get_peak_usage(true)`.
 
 | Method | Time | Peak memory | Speedup |
-|---|---:|---:|---:|
-| `fgetcsv` | 21,259 ms | 2.0 MB | x1.00 |
-| `CsvStreamer` `foreach` (list rows) | 2,220 ms | 2.0 MB | **x9.6** |
-| `CsvStreamer` `foreach` (assoc rows) | 2,492 ms | 2.0 MB | **x9.2** |
-| `CsvStreamer` `nextRow()` (assoc rows) | 2,278 ms | 2.0 MB | **x9.3** |
-| `fgetcsv` + `array_combine` (assoc rows) | 22,864 ms | 2.0 MB | x1.00 |
+|---|---|---:|---:|---:|
+| `fgetcsv` | 22,149 ms | 2.0 MB | x1.00 |
+| `CsvStreamer` `foreach` (list rows) | 2,264 ms | 2.0 MB | **x9.8** |
+| `CsvStreamer` `foreach` (assoc rows) | 2,494 ms | 2.0 MB | **x8.9** |
+| `CsvStreamer` `nextRow()` (assoc rows) | 2,369 ms | 2.0 MB | **x9.4** |
+| `CsvStreamer` `nextRows(1000)` (assoc rows) | 2,342 ms | 4.0 MB | **x9.5** |
+| `fgetcsv` + `array_combine` (assoc rows) | 22,107 ms | 2.0 MB | x1.00 |
+
+### Batch reads: how much does `nextRows()` help?
+
+The per-call savings of `nextRows($n)` show up most on **narrow rows**, where
+PHP-side call overhead is a bigger share of the work. On the synthetic 500k
+dataset:
+
+| Method | Time | Speedup |
+|---|---:|---:|
+| `fgetcsv` (list rows) | 2,193 ms | x1.00 |
+| `CsvStreamer` `foreach` (list rows) | 334 ms | x6.6 |
+| `CsvStreamer` `nextRows(1000)` (list rows) | 204 ms | **x10.8** |
+
+On the wide 2M-row dataset the win shrinks to ~1% — per-cell allocation
+dominates there, and batching costs a little memory (1000 assoc rows ≈ 4 MB
+peak). Rule of thumb: use `nextRows()` for narrow rows and bulk DB ingest;
+`nextRow()` and `foreach` are equally fine for wide rows.
 
 ## Why it's fast
 

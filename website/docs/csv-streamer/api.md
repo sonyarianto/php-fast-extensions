@@ -56,6 +56,29 @@ when iteration has not yet started.
 Advances to the next row and returns it in a single call — the fastest way to
 iterate. Returns `null` at end of file.
 
+### `nextRows(int $count): array|null`
+
+Reads up to `$count` rows in a single call and returns them as an array of
+row arrays. Returns fewer than `$count` rows near end of file, or `null`
+when no rows remain. A `$count` of 0 returns `null`.
+
+Amortizes the per-call overhead across the batch — most effective on narrow
+rows, and a natural fit for chunked bulk inserts:
+
+```php
+<?php
+$streamer = new CsvStreamer('customers.csv', ',', true);
+$stmt = $pdo->prepare('INSERT INTO customers VALUES (?, ?, ?)');
+
+while (($batch = $streamer->nextRows(1000)) !== null) {
+    $pdo->beginTransaction();
+    foreach ($batch as $row) {
+        $stmt->execute([$row['id'], $row['name'], $row['email']]);
+    }
+    $pdo->commit();
+}
+```
+
 ### `headers(): array|null`
 
 Returns the header row as a sequential list, or `null` when `$has_headers` is

@@ -46,10 +46,32 @@ function bench_fgetcsv(string $label, string $path): array {
     ];
 }
 
+function bench_batch(string $label, string $path, int $batch, ?bool $hasHeaders = null, ?string $sumKey = null): array {
+    $s = new CsvStreamer($path, ',', $hasHeaders ?? false);
+    $sum = 0;
+    $count = 0;
+    $t0 = hrtime(true);
+    while (($rows = $s->nextRows($batch)) !== null) {
+        foreach ($rows as $row) {
+            $sum += (int) ($sumKey !== null ? $row[$sumKey] : $row[0]);
+            $count++;
+        }
+    }
+    $t1 = hrtime(true);
+    return [
+        'label' => $label,
+        'rows' => $count,
+        'ms' => ($t1 - $t0) / 1e6,
+        'peak_mb' => memory_get_peak_usage(true) / 1024 / 1024,
+    ];
+}
+
 $results = [];
 $results[] = bench_fgetcsv('fgetcsv (list rows)', $data);
 $results[] = bench_ext('CsvStreamer (list rows)', $data);
 $results[] = bench_ext('CsvStreamer (assoc rows)', $headersData, ',', true, 'id');
+$results[] = bench_batch('CsvStreamer nextRows(1000) (list)', $data, 1000);
+$results[] = bench_batch('CsvStreamer nextRows(1000) (assoc)', $headersData, 1000, true, 'id');
 
 // fgetcsv with header mapping (assoc equivalent)
 $fh = fopen($headersData, 'rb');
