@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/sonyarianto/php-fast-extensions/actions/workflows/ci.yml/badge.svg)](https://github.com/sonyarianto/php-fast-extensions/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PHP: >=8.1](https://img.shields.io/badge/PHP-%3E%3D8.1-777BB4.svg)](https://www.php.net/)
+[![PHP: >=8.2](https://img.shields.io/badge/PHP-%3E%3D8.2-777BB4.svg)](https://www.php.net/)
 [![Rust: stable](https://img.shields.io/badge/Rust-stable-orange.svg)](https://www.rust-lang.org/)
 [![Benchmark: 9.6x faster than fgetcsv](https://img.shields.io/badge/Benchmark-9.6x%20faster%20than%20fgetcsv-blue.svg)](https://github.com/sonyarianto/php-fast-extensions/tree/main/csv_streamer/tests)
 
@@ -44,7 +44,7 @@ works directly with `foreach`.
 
 ### Requirements
 
-- PHP 8.1 or later
+- PHP 8.2 or later
 - Rust (stable)
 - PHP development headers (`php-config`, e.g. `php8.3-dev` on Debian)
 - Clang (`libclang-dev` on Debian) — required by ext-php-rs build script

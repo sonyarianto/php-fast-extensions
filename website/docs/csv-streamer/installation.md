@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- PHP 8.1 or later
+- PHP 8.2 or later
 - Rust (stable)
 - PHP development headers (`php-config` — e.g. `php8.3-dev` on Debian)
 - Clang (`libclang-dev` on Debian) — used by the ext-php-rs build script
