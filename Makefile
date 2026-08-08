@@ -13,7 +13,7 @@ EXTENSIONS := csv_streamer
 
 BUILD_DIR ?= target/release
 
-.PHONY: all build test bench clean $(addprefix build-,$(EXTENSIONS)) $(addprefix test-,$(EXTENSIONS))
+.PHONY: all build test bench clean
 
 all: build
 
