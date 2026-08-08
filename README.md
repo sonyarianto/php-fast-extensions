@@ -15,6 +15,7 @@ A collection of high-performance PHP extensions written in Rust with
 | `rust_csv_streamer` — streaming CSV reader | `csv_streamer/` | ✅ Working |
 | `rust_excel_streamer` — streaming XLSX reader | `excel_streamer/` | ✅ Working |
 | `rust_json_streamer` — streaming JSON array reader | `json_streamer/` | ✅ Working |
+| `rust_xml_streamer` — streaming XML reader | `xml_streamer/` | ✅ Working |
 
 ---
 
@@ -355,6 +356,118 @@ php -d extension=target/release/libjson_streamer.so tests/test.php
 php -d extension=target/release/libjson_streamer.so tests/bench.php
 ```
 
+## rust_xml_streamer
+
+A high-performance, streaming XML reader for PHP. Parses elements whose local
+name equals a configurable row tag (found at any depth of the document) one
+at a time straight from the file, keeping memory usage constant regardless of
+file size. Implements PHP's `Iterator` interface.
+
+### Features
+
+- **Streaming / lazy**: rows are parsed element by element from a small
+  buffer — peak memory ~4 MB on a 1M-row / 280 MB file (vs multi-GB for
+  `DOMDocument` / `SimpleXML` whole-document loads)
+- **`foreach` support**: implements `Iterator` (`current`, `key`, `next`,
+  `rewind`, `valid`)
+- **`nextRow()` / `nextRows($n)` hot paths**: one call per row or one call
+  per batch
+- **Shape mapping**: child elements become assoc-array keys (repeated tags
+  become lists), attributes land under `@attributes`, direct text under
+  `@value`; leaf rows are wrapped as `{"@value": ...}` (XML has no scalars)
+- **Typed mode**: opt-in inference of `int` / `float` / `bool` from text
+- **Namespace-tolerant**: row tag, child tags and attribute keys are matched
+  by local (prefix-stripped) name
+- **Robust parsing**: entities and CDATA decoded, comments/PIs/doctype
+  skipped, malformed markup throws `\Exception` with the byte offset
+- **Errors as exceptions**: missing files and malformed XML throw
+  `\Exception`
+
+### Usage
+
+```php
+<?php
+// Iterate a huge XML file — ~4 MB of memory regardless of size
+$streamer = new XmlStreamer('export.xml'); // rows are <row> elements
+foreach ($streamer as $i => $row) {
+    echo $row['id'], "\n"; // children arrive as assoc-array keys
+}
+
+// Custom row tag + typed values
+$streamer = new XmlStreamer('inventory.xml', 'item', true);
+while (($row = $streamer->nextRow()) !== null) {
+    echo $row['price'], "\n"; // int/float instead of strings
+}
+
+// Batch reads amortize per-call overhead
+while (($rows = $streamer->nextRows(1000)) !== null) {
+    foreach ($rows as $row) { /* ... */ }
+}
+```
+
+### API
+
+`new XmlStreamer(string $path, ?string $row = 'row', ?bool $typed = false)`
+
+Implements `\Iterator` (`current`, `key`, `next`, `rewind`, `valid`), plus:
+
+| Method | Returns | Description |
+|---|---|---|
+| `nextRow()` | `array\|null` | Advance and return the next row in one call |
+| `nextRows(int $count)` | `array\|null` | Read up to `$count` rows in one batch |
+
+Shape of a row:
+
+```xml
+<row id="10">
+  <name>Widget</name>
+  <tag>a</tag>
+  <tag>b</tag>
+  <meta>note</meta>
+</row>
+```
+
+```php
+[
+    '@attributes' => ['id' => '10'],
+    'name' => 'Widget',
+    'tag' => ['a', 'b'],   // repeated tags become lists
+    'meta' => 'note',
+]
+```
+
+Attributes and text on a leaf element (`<item id="1">5</item>`) become
+`['@attributes' => ['id' => '1'], '@value' => '5']`; a text-only leaf row
+(`<row>5</row>`) becomes `['@value' => '5']`. Child attributes are preserved
+recursively, and mixed content (`<p>text <b>bold</b> text</p>`) yields
+`['b' => 'bold', '@value' => 'text text']`.
+
+### Performance
+
+On a generated 1,000,000-row / 280 MB file (10 fields each), same machine,
+peak memory via `memory_get_peak_usage(true)` (real RSS for the DOM baseline,
+which allocates outside PHP's accounting):
+
+| Method | Time | Peak memory | Rows/sec |
+|---|---|---|---|
+| `foreach` (assoc) | 4.2–4.8 s | 2.0 MB | ~209–228k |
+| `nextRows(1000)` (assoc) | 4.2–4.5 s | 4.0 MB | ~222–240k |
+| `DOMDocument` (128 MB limit) | ~9.0 s | ~4,100 MB real RSS | ~111k |
+
+`DOMDocument`/`SimpleXML` load the whole document — the 280 MB file peaks at
+~4.1 GB of real memory (invisible to PHP's `memory_limit`, which counts only
+emalloc'd memory). XmlStreamer's edge is memory: it streams with constant
+2–4 MB and never materializes more than one row.
+
+### Tests & benchmarks
+
+```bash
+cd xml_streamer
+php tests/generate_xml.php          # generates small.xml + large.xml (280 MB) + edge fixtures
+php -d extension=target/release/libxml_streamer.so tests/test.php
+php -d extension=target/release/libxml_streamer.so tests/bench.php
+```
+
 ## Development
 
 Build, test and benchmark every extension from the repo root:
@@ -375,6 +488,7 @@ that only exist at runtime:
 - `csv_streamer/stubs/CsvStreamer.php`
 - `excel_streamer/stubs/XlsxStreamer.php`
 - `json_streamer/stubs/JsonStreamer.php`
+- `xml_streamer/stubs/XmlStreamer.php`
 
 Point your IDE's include path at them, or add them to your project's
 `composer.json`:
@@ -384,7 +498,8 @@ Point your IDE's include path at them, or add them to your project's
     "files": [
         "csv_streamer/stubs/CsvStreamer.php",
         "excel_streamer/stubs/XlsxStreamer.php",
-        "json_streamer/stubs/JsonStreamer.php"
+        "json_streamer/stubs/JsonStreamer.php",
+        "xml_streamer/stubs/XmlStreamer.php"
     ]
 }
 ```

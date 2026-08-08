@@ -9,7 +9,7 @@
 #   make bench   # run each extension's PHP benchmark
 #   make clean
 
-EXTENSIONS := csv_streamer excel_streamer json_streamer
+EXTENSIONS := csv_streamer excel_streamer json_streamer xml_streamer
 
 BUILD_DIR ?= target/release
 

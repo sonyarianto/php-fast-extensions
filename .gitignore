@@ -7,3 +7,4 @@ target/
 csv_streamer/tests/data/
 excel_streamer/tests/data/
 json_streamer/tests/data/
+xml_streamer/tests/data/
